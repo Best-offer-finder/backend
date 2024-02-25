@@ -1,13 +1,16 @@
-package com.example.backend.user;
+package com.example.backend.user.model;
 
+import com.example.backend.filter.model.Filter;
 import jakarta.persistence.*;
 
+import java.util.Set;
+
 @Entity
+@Table(name = "user", uniqueConstraints = @UniqueConstraint(columnNames = "email"))
 public class User {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name="user_id")
     private Integer id;
 
     @Column(nullable = false, length = 32)
@@ -18,6 +21,9 @@ public class User {
 
     @Column(length = 64)
     private String password;
+
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private Set<Filter> filters;
 
     public Integer getId() {
         return id;
@@ -49,5 +55,13 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Set<Filter> getFilters() {
+        return filters;
+    }
+
+    public void setFilters(Set<Filter> filters) {
+        this.filters = filters;
     }
 }
