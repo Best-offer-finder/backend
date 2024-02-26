@@ -20,6 +20,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'mysql:mysql-connector-java:8.0.28'
+	implementation 'com.google.protobuf:protobuf-java:3.25.2'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 

@@ -3,35 +3,34 @@ package com.example.backend.filter.model;
 import com.example.backend.user.model.User;
 import jakarta.persistence.*;
 
-
 @Entity
 public class Filter {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
+    private long id;
 
-    @Column(nullable = false, length = 32)
-    private String value;
+    @Column(nullable = false, length = 8192)
+    private String data;
 
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
 
-    public Integer getId() {
+    public long getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(long id) {
         this.id = id;
     }
 
-    public String getValue() {
-        return value;
+    public String getData() {
+        return data;
     }
 
-    public void setValue(String value) {
-        this.value = value;
+    public void setData(String data) {
+        this.data = data;
     }
 
     public User getUser() {
@@ -41,4 +40,5 @@ public class Filter {
     public void setUser(User user) {
         this.user = user;
     }
+
 }
