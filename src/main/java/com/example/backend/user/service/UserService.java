@@ -18,7 +18,7 @@ public class UserService {
     }
 
     public User get(String email) throws EntityNotFoundException {
-        return userRepository.findByEmailWithFilters(email).orElseThrow(() -> new EntityNotFoundException(ErrorCode.USER_NOT_FOUND));
+        return userRepository.findByEmail(email).orElseThrow(() -> new EntityNotFoundException(ErrorCode.USER_NOT_FOUND));
     }
 
     public List<User> getAll() {
