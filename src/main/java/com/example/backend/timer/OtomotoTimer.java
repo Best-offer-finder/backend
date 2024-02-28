@@ -50,6 +50,15 @@ public class OtomotoTimer {
         this.filterService = filterService;
     }
 
+    /**
+     * Run otomoto timer synchronously.
+     * fixedRated = 60 * 5 * 1000 is equal to 5 minutes delay
+     * <p>
+     * Timer fetches new cars for every available filter.
+     * If filter is invalid, then it's being ignored.
+     *
+     * @throws EntityNotFoundException thrown if application setting is missing
+     */
     @Scheduled(fixedRate = 60 * 5 * 1000)
     public void runTimer() throws EntityNotFoundException {
         List<User> allUsers = userService.getAll();
@@ -75,6 +84,16 @@ public class OtomotoTimer {
         LOGGER.info("[{}][{}] Timer completed.", new SimpleDateFormat("HH:mm:ss").format(new Date()), TIMER_NAME);
     }
 
+    /**
+     * Prepare dto which will be sent to otomoto REST API
+     * and run loop searching for new cars.
+     * <p>
+     * Loop is finished when there are no more new cars
+     * (objects from API are repeating with objects inside database)
+     *
+     * @param filter currently processed filter
+     * @param query final GraphQL indicating String query
+     */
     private void loadDataForSingleFilter(Filter filter, String query) {
         OtomotoDto otomotoDto;
         try {
@@ -98,6 +117,14 @@ public class OtomotoTimer {
         }
     }
 
+    /**
+     * Create dto with next pages and send POST request
+     *
+     * @param otomotoDto - dto sent to REST API
+     * @param filter currently processed filter
+     * @param page page number. There are 32 elements per page
+     * @return true if there are no more new elements and timer for certain filter should be finished
+     */
     private boolean finishedProcessingFilterBatchly(OtomotoDto otomotoDto, Filter filter, Long page) {
         try {
             otomotoDto.getVariables().setPage(page);
@@ -105,12 +132,18 @@ public class OtomotoTimer {
             OtomotoResponseDto otomotoResponseDto = getPostResponse(OBJECT_MAPPER.writeValueAsString(otomotoDto));
             return processSingleFilter(filter, otomotoResponseDto);
 
-        } catch (JsonProcessingException | EntityNotFoundException e) {
+        } catch (JsonProcessingException e) {
             LOGGER.error("[{}] ERROR GENERATING REQUEST!", TIMER_NAME);
             return true;
         }
     }
 
+    /**
+     * Send POST request to the destination path
+     *
+     * @param jsonData json combining filter data specified by user
+     * @return OtomotoResponseDto containing car data
+     */
     private OtomotoResponseDto getPostResponse(String jsonData) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -128,7 +161,16 @@ public class OtomotoTimer {
         }
     }
 
-    private boolean processSingleFilter(Filter filter, OtomotoResponseDto otomotoResponseDto) throws EntityNotFoundException {
+    /**
+     * Calculate current filter.
+     * If there are new cars, then they should be saved inside the database.
+     * Otherwise, filter is being ignored.
+     *
+     * @param filter currently processed filter
+     * @param otomotoResponseDto response from REST API
+     * @return true if the process should stop and there won't be any more cars
+     */
+    private boolean processSingleFilter(Filter filter, OtomotoResponseDto otomotoResponseDto) {
         Set<NodeParentDto> newCars = Optional.ofNullable(otomotoResponseDto)
                 .map(OtomotoResponseDto::getData)
                 .map(DataDto::getAdvertSearch)
@@ -155,6 +197,13 @@ public class OtomotoTimer {
         return diff.size() != PAGE_SIZE && !diff.isEmpty();
     }
 
+    /**
+     * Check if newest added car exists inside provided Set
+     *
+     * @param otomotoResponseDto POST response object containing latestAdId
+     * @param carIds Set of car ids
+     * @return true if Set contains  car id inside DTO object
+     */
     private boolean latestCarIdExists(OtomotoResponseDto otomotoResponseDto, Set<Long> carIds) {
         return carIds.stream().anyMatch((id) -> Optional.ofNullable(otomotoResponseDto)
                 .map(OtomotoResponseDto::getData)
@@ -163,6 +212,13 @@ public class OtomotoTimer {
                 .map(id::equals).orElse(false));
     }
 
+    /**
+     * Insert car's ids into the database.
+     *
+     * @param carIds Set of car's ids
+     * @param filter currently processed filter
+     * @param firstInitialization true if this is the first ever loop for the filter
+     */
     private void saveNewCarsToDatabase(Set<Long> carIds, Filter filter, boolean firstInitialization) {
         Set<FilterToCar> filterToCarSet = carIds.stream().map((carId) ->
                 FilterToCar.of(filter, carId, firstInitialization ? CarStatus.FIRST_INITIALIZATION : CarStatus.NEW))
