@@ -8,9 +8,15 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ThumbnailDto {
 
+    /**
+     * Thumbnail resolution = 320x240
+     */
     @JsonProperty("x1")
     private String x1;
 
+    /**
+     * Thumbnail resolution = 640x480
+     */
     @JsonProperty("x2")
     private String x2;
 

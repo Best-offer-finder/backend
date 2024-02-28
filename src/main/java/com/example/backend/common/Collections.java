@@ -8,13 +8,13 @@ public class Collections {
         return (collection == null || collection.isEmpty());
     }
 
-    public static String toString(Set<Long> lista) {
-        if (lista == null || lista.isEmpty()) {
+    public static String toString(Set<Long> list) {
+        if (list == null || list.isEmpty()) {
             return "";
         }
 
         StringJoiner joiner = new StringJoiner(",");
-        for (Long element : lista) {
+        for (Long element : list) {
             joiner.add(element.toString());
         }
 

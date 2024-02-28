@@ -110,9 +110,9 @@ public class OtomotoTimer {
         }
 
         int page = 1;
-        boolean found = false;
-        while (!found) {
-            found = finishedProcessingFilterBatchly(otomotoDto, filter, page);
+        boolean shouldFinish = false;
+        while (!shouldFinish) {
+            shouldFinish = processSinglePage(otomotoDto, filter, page);
             page++;
         }
     }
@@ -125,12 +125,12 @@ public class OtomotoTimer {
      * @param page page number. There are 32 elements per page
      * @return true if there are no more new elements and timer for certain filter should be finished
      */
-    private boolean finishedProcessingFilterBatchly(OtomotoDto otomotoDto, Filter filter, int page) {
+    private boolean processSinglePage(OtomotoDto otomotoDto, Filter filter, int page) {
         try {
             otomotoDto.getVariables().setPage(page);
 
             OtomotoResponseDto otomotoResponseDto = getPostResponse(OBJECT_MAPPER.writeValueAsString(otomotoDto));
-            return processSingleFilter(filter, otomotoResponseDto);
+            return calculatePageWithOtomotoData(filter, otomotoResponseDto);
 
         } catch (JsonProcessingException e) {
             LOGGER.error("[{}] Error generating POST request.", TIMER_NAME, e);
@@ -170,7 +170,7 @@ public class OtomotoTimer {
      * @param otomotoResponseDto response from REST API
      * @return true if the process should stop and there won't be any more cars
      */
-    private boolean processSingleFilter(Filter filter, OtomotoResponseDto otomotoResponseDto) {
+    private boolean calculatePageWithOtomotoData(Filter filter, OtomotoResponseDto otomotoResponseDto) {
         Set<NodeParentDto> newCars = Optional.ofNullable(otomotoResponseDto)
                 .map(OtomotoResponseDto::getData)
                 .map(DataDto::getAdvertSearch)
