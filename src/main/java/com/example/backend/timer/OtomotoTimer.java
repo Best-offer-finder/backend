@@ -34,7 +34,7 @@ public class OtomotoTimer {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(OtomotoTimer.class);
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-    private static final Long PAGE_SIZE = 32L;
+    private static final int PAGE_SIZE = 32;
     private static final String TIMER_NAME = "OtomotoTimer";
 
     @Value("${otomoto.search.api.url}")
@@ -70,7 +70,7 @@ public class OtomotoTimer {
         try {
             query = OBJECT_MAPPER.readValue(query, OtomotoDto.class).getQuery();
         } catch (JsonProcessingException e) {
-            LOGGER.error("[{}] Invalid query: {}", TIMER_NAME, query);
+            LOGGER.error("[{}] Invalid query: {}", TIMER_NAME, query, e);
             return;
         }
 
@@ -109,7 +109,7 @@ public class OtomotoTimer {
             return;
         }
 
-        long page = 1;
+        int page = 1;
         boolean found = false;
         while (!found) {
             found = finishedProcessingFilterBatchly(otomotoDto, filter, page);
@@ -125,7 +125,7 @@ public class OtomotoTimer {
      * @param page page number. There are 32 elements per page
      * @return true if there are no more new elements and timer for certain filter should be finished
      */
-    private boolean finishedProcessingFilterBatchly(OtomotoDto otomotoDto, Filter filter, Long page) {
+    private boolean finishedProcessingFilterBatchly(OtomotoDto otomotoDto, Filter filter, int page) {
         try {
             otomotoDto.getVariables().setPage(page);
 
@@ -133,7 +133,7 @@ public class OtomotoTimer {
             return processSingleFilter(filter, otomotoResponseDto);
 
         } catch (JsonProcessingException e) {
-            LOGGER.error("[{}] ERROR GENERATING REQUEST!", TIMER_NAME);
+            LOGGER.error("[{}] Error generating POST request.", TIMER_NAME, e);
             return true;
         }
     }
@@ -184,32 +184,20 @@ public class OtomotoTimer {
         Set<Long> newCarsIds = newCars.stream().map(NodeParentDto::getNode).map(NodeDto::getId).collect(Collectors.toSet());
         Set<Long> oldCarsIds = Collections.isNullOrEmpty(filter.getFilterToCars()) ? new HashSet<>() : filter.getFilterToCars().stream().map(FilterToCar::getCarId).collect(Collectors.toSet());
 
-        // Check if latestAdId already exists in database
-        if (latestCarIdExists(otomotoResponseDto, oldCarsIds))
-            return true;
-
         Set<Long> diff = newCarsIds.stream().filter(newCarElement -> !oldCarsIds.contains(newCarElement)).collect(Collectors.toSet());
         LOGGER.info("[{}][FilterId: {}] Found {} new cars: {}", TIMER_NAME, filter.getId(), diff.size(), Collections.toString(diff));
 
-        //Save all new cars into the database
-        saveNewCarsToDatabase(diff, filter, filter.getFilterToCars().isEmpty());
+        // Save all new cars into the database
+        boolean firstInitialization = filter.getFilterToCars().isEmpty();
+        saveNewCarsToDatabase(diff, filter, firstInitialization);
 
-        return diff.size() != PAGE_SIZE && !diff.isEmpty();
-    }
+        if (firstInitialization)
+            return true;
 
-    /**
-     * Check if newest added car exists inside provided Set
-     *
-     * @param otomotoResponseDto POST response object containing latestAdId
-     * @param carIds Set of car ids
-     * @return true if Set contains  car id inside DTO object
-     */
-    private boolean latestCarIdExists(OtomotoResponseDto otomotoResponseDto, Set<Long> carIds) {
-        return carIds.stream().anyMatch((id) -> Optional.ofNullable(otomotoResponseDto)
-                .map(OtomotoResponseDto::getData)
-                .map(DataDto::getAdvertSearch)
-                .map(AdvertSearchDto::getLatestAdId)
-                .map(id::equals).orElse(false));
+        if (diff.size() == PAGE_SIZE)
+            return false;
+
+        return diff.isEmpty() || diff.size() < PAGE_SIZE;
     }
 
     /**

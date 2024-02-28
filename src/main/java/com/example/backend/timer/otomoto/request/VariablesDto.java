@@ -27,7 +27,7 @@ public class VariablesDto {
 
     private final long maxAge = 1;
 
-    private long page = 1;
+    private int page = 1;
 
     private final List<String> parameters = new ArrayList<>(Arrays.asList("color", "country_origin", "damaged",
             "engine_capacity", "engine_power", "fuel_type", "gearbox", "is_imported_car", "make", "mileage",
@@ -53,11 +53,11 @@ public class VariablesDto {
         this.click2BuyExperimentVariant = click2BuyExperimentVariant;
     }
 
-    public long getPage() {
+    public int getPage() {
         return page;
     }
 
-    public void setPage(long page) {
+    public void setPage(int page) {
         this.page = page;
     }
 
