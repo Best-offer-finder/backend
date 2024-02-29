@@ -3,6 +3,9 @@ package com.example.backend.filter.model;
 import com.example.backend.user.model.User;
 import jakarta.persistence.*;
 
+import java.util.HashSet;
+import java.util.Set;
+
 @Entity
 public class Filter {
 
@@ -16,6 +19,9 @@ public class Filter {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    @OneToMany(mappedBy = "filter")
+    private Set<FilterToCar> filterToCars = new HashSet<>();
 
     public long getId() {
         return id;
@@ -39,6 +45,14 @@ public class Filter {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public Set<FilterToCar> getFilterToCars() {
+        return filterToCars;
+    }
+
+    public void setFilterToCars(Set<FilterToCar> filterToCars) {
+        this.filterToCars = filterToCars;
     }
 
 }

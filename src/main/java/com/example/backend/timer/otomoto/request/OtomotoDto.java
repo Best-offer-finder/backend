@@ -1,4 +1,4 @@
-package com.example.backend.timer.otomoto.dto;
+package com.example.backend.timer.otomoto.request;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 
