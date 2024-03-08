@@ -10,5 +10,3 @@ public interface CarBrandRepository extends JpaRepository<CarBrand, Integer> {
     List<CarBrand> findAllByOrderByNameAsc();
 
 }
-
-
